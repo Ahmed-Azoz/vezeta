@@ -1,0 +1,76 @@
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils.translation import ugettext as _
+from django.db.models.signals import post_save
+from django.utils.text import slugify
+
+
+TYPE_OF_PERSON = (
+    ('M', "Male"),
+    ('F', "Female"),
+)
+
+
+class Profile(models.Model):
+    DOCOTR_IN={
+       ("جلدية", "جلدية"),
+       ("أسنان", "أسنان"),
+       ("أطفال حديثى الولادة", "أطفال حديثى الولادة"),
+       ("مخ واعصاب", "مخ واعصاب"),
+       ("عظام", "عظام"),
+       ("نساء وتوليد", "نساء وتوليد"),
+       ("أنف وأذن وحنجرة", "أنف وأذن وحنجرة"),
+       ("قلب وأوعية دموية", "قلب وأوعية دموية"),
+       ("أمراض دم", "أمراض دم"),
+       ("أورام", "أورام"),
+       ("باطنة", "باطنة"),
+       ("تخسيس وتغذية", "تخسيس وتغذية"),
+       ("جراحة اطفال", "جراحة اطفال"),
+       ("جراحة اورام", "جراحة اورام"),
+       ("جراحة تجميل", "جراحة تجميل"),
+       ("جراحة سمنة ومناظير", "جراحة سمنة ومناظير"),
+       ("نفسي", "نفسي"),
+
+    }
+
+    user = models.OneToOneField(User, verbose_name=_("user"), on_delete=models.CASCADE)
+    name = models.CharField(_("الاسم"), max_length=50)
+    subtitle = models.CharField(_("نبذه عنك"), max_length=50)
+    address = models.CharField(_("المحافظه"), max_length=50)
+    address_detail = models.CharField(_("العنوان"), max_length=50)
+    number_phone = models.CharField(_("الهاتف"), max_length=50)
+    Waiting_time = models.CharField(_("مدة الانتظار"), max_length=50, blank=True, null=True)
+    working_hours = models.CharField(_("عدد ساعات العمل"), max_length=50, blank=True, null=True)
+    doctor = models.CharField(_("دكتور؟"), choices = DOCOTR_IN, max_length=50, blank=True, null=True)
+    who_i = models.TextField(_("من انا"), max_length=250, blank=True, null=True)
+    price = models.IntegerField(_("سعر الكشف"), blank=True, null=True)
+    facebook = models.CharField( max_length=100, blank=True, null=True)
+    twitter = models.CharField( max_length=100, blank=True, null=True)
+    google = models.CharField( max_length=100, blank=True, null=True)
+    join_us = models.DateTimeField(_("وقت الانضمام"), auto_now_add=True)
+    type_of_person = models.CharField(_("النوع"), choices = TYPE_OF_PERSON, max_length=50)
+    image = models.ImageField(_("الصورة الشخصية"), upload_to='profile', blank=True, null=True)
+    specialist_doctor = models.CharField(_("متخصص فى"), max_length=100,blank=True, null=True)
+    slug = models.SlugField(_("slug"),blank=True, null=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.user.username)
+        super(Profile, self).save(*args, **kwargs) 
+
+    def __str__(self):
+        return '%s' %(self.user.username)
+
+   
+def create_profile(sender, **kwargs):
+    if kwargs['created']:
+        Profile.objects.create(user=kwargs['instance'])
+
+post_save.connect(create_profile, sender=User)
+
+
+
+# @receiver(post_save, sender=User)
+# def create_user_profile(sender, instance, created, **kwargs):
+#     if created:
+#         Profile.objects.create(user=instance)
